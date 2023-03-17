@@ -15,6 +15,7 @@ flipBtn.addEventListener("click", flipShip);
 
 //Creating boards
 const width = 10
+const boardSize = width * width;
 
 const createBoard = (color, user) => {
     const boardContainer = document.createElement("div");
@@ -55,16 +56,64 @@ const ships = [destroyer, submarine, cruiser, battleship, carrier];
 
 const addShip = (ship) => {
     const allBoardBlocks = document.querySelectorAll('#AI div');
-    let randomBoolean = Match.random() < 0.5;
-    let isHorizontal = true;
-    let randomStartIndex = Math.floor(Math.random() * (width * width));
-    console.log(randomStartIndex);
+    let randomBoolean = Math.random() < 0.5;
+    let isHorizontal = randomBoolean;
+    let randomStartIndex = Math.floor(Math.random() * (boardSize));
+
+    let validStart = isHorizontal ? randomStartIndex <= boardSize - ship.length ? randomStartIndex : boardSize - ship.length :
+        // handle vertical
+        randomStartIndex <= boardSize - (width * ship.length) ? randomStartIndex : randomStartIndex - (ship.length * width) + width;
+
+    console.log(validStart);
+
+    let shipBlocks = [];
 
     for (let i = 0; i < ship.length; i++) {
-        if(isHorizontal) {
-            console.log(allBoardBlocks[number(randomStartIndex) + i]);
+        if (isHorizontal) {
+            shipBlocks.push(allBoardBlocks[Number(validStart) + i]);
+        } else {
+            shipBlocks.push(allBoardBlocks[Number(validStart) + (i * width)]);
         }
     }
+
+    let valid
+
+    if (isHorizontal) {
+        shipBlocks.every((_shipBlock, index) =>
+            valid = shipBlocks[0].id % width !== width - (shipBlocks.length - (index + 1)))
+    } else {
+        shipBlocks.every((_shipBlock, index) =>
+            valid = shipBlocks[0].id < 90 + (width * index + 1))
+    }
+
+    const notTaken = shipBlocks.every(shipBlock => !shipBlock.classList.contains('taken'));
+
+    if (valid && notTaken) {
+        shipBlocks.forEach(shipBlock => {
+            shipBlock.classList.add(ship.name);
+            shipBlock.classList.add('taken');
+        });
+    } else {
+        addShip(ship);
+    }
+
+
+    console.log(shipBlocks);
 }
 
+ships.forEach(ship => addShip(ship));
+
+
 addShip(destroyer);
+
+//Drag player ships
+
+let draggedShip
+const dragStart = (e) => {
+    console.log(e.target);
+    draggedShip = e.target;
+}
+const optionShips = Array.from(container.children);
+optionShips.forEach(item => item.addEventListener('dragstart', dragStart));
+
+
