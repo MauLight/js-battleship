@@ -40,7 +40,7 @@
 }
 
 .cruiser {
-    background-color: red;
+    background-color: greenyellow;
 }
 
 .battleship-preview {
@@ -83,7 +83,7 @@
 }
 
 .boom {
-    background-color: darkred;
+    background-color: red;
 }
 
 .empty {

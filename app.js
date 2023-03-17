@@ -3,6 +3,7 @@ const container = document.querySelector(".option-container");
 const flipBtn = document.getElementById("flip-btn");
 const startButton = document.getElementById("start-btn");
 const infoDisplay = document.getElementById('info');
+const turnDisplay = document.getElementById('turn-display');
 
 //Option choosing
 let angle = 0;
@@ -55,17 +56,18 @@ const carrier = new Ship('carrier', 5);
 let notDropped;
 
 const handleValidity = (allBoardBlocks, isHorizontal, startIndex, ship) => {
-    let validStart = isHorizontal ? startIndex <= boardSize - ship.length ? startIndex : boardSize - ship.kength :
+    let validStart = isHorizontal ? startIndex <= boardSize - ship.length ? startIndex : boardSize - ship.length :
         // handle vertical
-        startIndex <= boardSize - width * ship.length ? startIndex : startIndex - ship.length * width + width;
+        startIndex <= boardSize - (width * ship.length) ? startIndex : startIndex - (ship.length * width) + width;
+
+    console.log(validStart);
 
     let shipBlocks = [];
 
     for (let i = 0; i < ship.length; i++) {
         if (isHorizontal) {
             shipBlocks.push(allBoardBlocks[Number(validStart) + i]);
-        }
-        else {
+        } else {
             shipBlocks.push(allBoardBlocks[Number(validStart) + (i * width)]);
         }
     }
@@ -73,13 +75,15 @@ const handleValidity = (allBoardBlocks, isHorizontal, startIndex, ship) => {
     let valid
 
     if (isHorizontal) {
-        shipBlocks.every((_shipBlock, index) => valid = shipBlocks[0].id % width - (shipBlocks.length - (index + 1)))
-    }
-    else {
-        shipBlocks.every((_shipBlock, index) => valid = shipBlocks[0].id < 90 + (width * index + 1))
+        shipBlocks.every((_shipBlock, index) =>
+            valid = shipBlocks[0].id % width !== width - (shipBlocks.length - (index + 1)))
+    } else {
+        shipBlocks.every((_shipBlock, index) =>
+            valid = shipBlocks[0].id < 90 + (width * index + 1))
     }
 
     const notTaken = shipBlocks.every(shipBlock => !shipBlock.classList.contains('taken'));
+
 
     return { shipBlocks, valid, notTaken };
 }
@@ -167,13 +171,112 @@ const highlightArea = (startIndex, ship) => {
 
 //Start game
 
-const startGame = () => {
-    if(container.children.length != 0) {
+let gameOver = false;
+let playerTurn;
 
+const startGame = () => {
+    if (container.children.length != 0) {
+        infoDisplay.textContent = "Place your pieces first!";
+    }
+    else {
+        const allAiBlocks = document.querySelectorAll('#AI div');
+        allAiBlocks.forEach(block => block.addEventListener('click', handleClick));
     }
 }
 
 startButton.addEventListener('click', startGame);
+
+let playerHits = [];
+let aiHits = [];
+const playerSunkShips = [];
+const aiSunkShips = [];
+
+const handleClick = (e) => {
+    if (!gameOver) {
+        if (e.target.classList.contains('taken')) {
+            e.target.classList.add('boom');
+            infoDisplay.textContent = "That's a hit! AI ship has taken damage.";
+            let classes = Array.from(e.target.classList);
+            classes = classes.filter(className => className !== 'game-block');
+            classes = classes.filter(className => className !== 'boom');
+            classes = classes.filter(className => className !== 'taken');
+            playerHits.push(...classes);
+            checkScore('player', playerHits, playerSunkShips);
+        }
+        if (!e.target.classList.contains('taken')) {
+            infoDisplay.textContent = "You missed!";
+            e.target.classList.add('empty');
+        }
+        playerTurn = false;
+        const allBoardBlocks = document.querySelectorAll("#AI div");
+        allBoardBlocks.forEach(block => block.replaceWith(block.cloneNode(true))); //Remove eventListeners from items.
+        setTimeout(aiGo, 3000);
+    }
+}
+
+// Define AI go
+
+const aiGo = () => {
+    if (!gameOver) {
+        turnDisplay.textContent = "AI's turn!";
+        infoDisplay.textContent = "AI is thinking...";
+        setTimeout(() => {
+            let randomGo = Math.floor(Math.random() * boardSize);
+            const allPlayerBlocks = document.querySelectorAll('#player div');
+
+            if (allPlayerBlocks[randomGo].classList.contains('taken') && allPlayerBlocks[randomGo].classList.contains('boom')) {
+                aiGo();
+                return;
+            }
+            else if (allPlayerBlocks[randomGo].classList.contains('taken') && !allPlayerBlocks[randomGo].classList.contains('boom')) {
+                allPlayerBlocks[randomGo].classList.add('boom');
+                infoDisplay.textContent = "AI just hit your ship!";
+                let classes = Array.from(allPlayerBlocks[randomGo].classList);
+                classes = classes.filter(className => className !== 'block');
+                classes = classes.filter(className => className !== 'boom');
+                classes = classes.filter(className => className !== 'taken');
+                aiHits.push(...classes);
+                checkScore('AI', aiHits, aiSunkShips);
+            }
+            else {
+                infoDisplay.textContent = "AI missed!";
+                allPlayerBlocks[randomGo].classList.add('empty');
+            }
+        }, 3000);
+
+        setTimeout(() => {
+            playerTurn = true;
+            turnDisplay.textContent = "It's your turn.";
+            infoDisplay.textContent = "Attack your enemy!";
+            const allAiBlocks = document.querySelectorAll('#AI div');
+            allAiBlocks.forEach(block => block.addEventListener('click', handleClick));
+        }, 6000);
+    }
+}
+
+const checkScore = (user, hits, sunkShips) => {
+
+    const checkShip = (shipName, shipLength) => {
+        if (hits.filter(hitShip => hitShip === shipName).length === shipLength) {
+            infoDisplay.textContent = `You just sunk ${user}'s ${shipName}`;
+            if (user === 'player') {
+                playerHits = hits.filter(hitShip => hitShip !== shipName);
+            }
+            if (user === 'AI') {
+                aiHits = hits.filter(hitShip => hitShip !== shipName);
+            }
+
+            sunkShips.push(shipName)
+        }
+    }
+
+    checkShip('destroyer', 2);
+    checkShip('submarine', 3);
+    checkShip('cruiser', 3);
+    checkShip('battleship', 4);
+    checkShip('carrier', 5);
+
+};
 
 
 
