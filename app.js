@@ -175,12 +175,18 @@ let gameOver = false;
 let playerTurn;
 
 const startGame = () => {
-    if (container.children.length != 0) {
-        infoDisplay.textContent = "Place your pieces first!";
-    }
-    else {
-        const allAiBlocks = document.querySelectorAll('#AI div');
-        allAiBlocks.forEach(block => block.addEventListener('click', handleClick));
+
+    if (playerTurn === undefined) {
+        if (container.children.length != 0) {
+            infoDisplay.textContent = "Place your pieces first!";
+        }
+        else {
+            const allAiBlocks = document.querySelectorAll('#AI div');
+            allAiBlocks.forEach(block => block.addEventListener('click', handleClick));
+            playerTurn = true;
+            turnDisplay.textContent = 'GO!';
+            infoDisplay.textContent = 'The game has started!';
+        }
     }
 }
 
@@ -266,7 +272,7 @@ const checkScore = (user, hits, sunkShips) => {
                 aiHits = hits.filter(hitShip => hitShip !== shipName);
             }
 
-            sunkShips.push(shipName)
+            sunkShips.push(shipName);
         }
     }
 
@@ -275,6 +281,16 @@ const checkScore = (user, hits, sunkShips) => {
     checkShip('cruiser', 3);
     checkShip('battleship', 4);
     checkShip('carrier', 5);
+
+
+    if (playerSunkShips.length === 5) {
+        infoDisplay.textContent = "You sunk all the AI's ships! YOU WON!";
+        gameOver = true;
+    }
+    if (aiSunkShips.length === 5) {
+        infoDisplay.textContent = "AI sunk all of your ships! AI WON!";
+        gameOver = true;
+    }
 
 };
 
