@@ -77,3 +77,15 @@
     width: 20px;
     height: 20px;
 }
+
+.hover {
+    background-color: gainsboro;
+}
+
+.boom {
+    background-color: darkred;
+}
+
+.empty {
+    background-color: gainsboro;
+}
